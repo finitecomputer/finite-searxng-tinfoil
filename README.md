@@ -53,10 +53,17 @@ returns non-empty JSON results.
 
 ## Release
 
-In the public repo, run the `Tinfoil Release` workflow with a version:
+The first release has been published:
+
+```text
+v0.0.1
+ghcr.io/finitecomputer/finite-searxng-tinfoil@sha256:4221fc420bc524fbc2797b5fdc421f86e4abc5d2036d4521bdbf5893d79b3b70
+```
+
+For future releases, run the `Tinfoil Release` workflow with a new version:
 
 ```bash
-gh workflow run tinfoil-release.yml -f version=v0.0.1
+gh workflow run tinfoil-release.yml -f version=v0.0.2
 ```
 
 The workflow:
@@ -72,21 +79,32 @@ In the Tinfoil dashboard:
 
 1. Add a `SEARXNG_SECRET` secret with a random value.
 2. Create a new container from the public repo and release tag.
-3. Deploy in staging/debug first.
-4. Smoke through the verified Tinfoil proxy, not plain `curl`:
+3. Deploy in staging first.
+4. Smoke through the verified Tinfoil proxy, not plain public `curl`:
 
 ```bash
-tinfoil-proxy \
-  -e https://<container>.<org>.containers.tinfoil.dev \
-  -r finitecomputer/finite-searxng-tinfoil \
+tinfoil container connect finite-searxng \
   -p 3301
 ```
 
-Then:
+Then, in another shell:
 
 ```bash
-SEARXNG_URL=http://127.0.0.1:3301 \
-  scripts/smoke-searxng.sh
+curl -fsS 'http://127.0.0.1:3301/search?q=open+source&format=json' |
+  jq '.results | length'
+```
+
+CLI equivalent once an org admin key is available:
+
+```bash
+tinfoil login
+printf '%s' '<random-secret>' |
+  tinfoil secret create SEARXNG_SECRET --value-file -
+tinfoil container create finite-searxng \
+  --repo finitecomputer/finite-searxng-tinfoil \
+  --tag v0.0.1 \
+  --secret SEARXNG_SECRET \
+  --staging
 ```
 
 ## Production Gate
