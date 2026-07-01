@@ -116,6 +116,13 @@ tinfoil container create finite-searxng \
   --staging
 ```
 
+GitHub Actions equivalent:
+
+1. Add `TINFOIL_API_KEY` as a repository or organization secret.
+2. If `SEARXNG_SECRET` does not already exist in Tinfoil, also add
+   `SEARXNG_SECRET_VALUE` as a secret.
+3. Run the `Tinfoil Deploy - Staging` workflow with tag `v0.0.1`.
+
 ## Production Gate
 
 Before production use, choose one:
