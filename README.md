@@ -53,17 +53,17 @@ returns non-empty JSON results.
 
 ## Release
 
-The first release has been published:
+The current deployed release is:
 
 ```text
-v0.0.1
-ghcr.io/finitecomputer/finite-searxng-tinfoil@sha256:4221fc420bc524fbc2797b5fdc421f86e4abc5d2036d4521bdbf5893d79b3b70
+v0.0.2
+ghcr.io/finitecomputer/finite-searxng-tinfoil@sha256:34aa52a3f452be46692b189d5b7e10e3afac0787318e16171b574e89ca36746b
 ```
 
 For future releases, run the `Tinfoil Release` workflow with a new version:
 
 ```bash
-gh workflow run tinfoil-release.yml -f version=v0.0.2
+gh workflow run tinfoil-release.yml -f version=v0.0.3
 ```
 
 The workflow:
@@ -99,7 +99,7 @@ CLI equivalent once an org admin key is available:
 ```bash
 tinfoil login --api-key admin_...
 export SEARXNG_SECRET_VALUE="$(openssl rand -hex 32)"
-scripts/deploy-staging.sh v0.0.1
+scripts/deploy-staging.sh v0.0.2
 unset SEARXNG_SECRET_VALUE
 ```
 
@@ -111,7 +111,7 @@ printf '%s' '<random-secret>' |
   tinfoil secret create SEARXNG_SECRET --value-file -
 tinfoil container create finite-searxng \
   --repo finitecomputer/finite-searxng-tinfoil \
-  --tag v0.0.1 \
+  --tag v0.0.2 \
   --secret SEARXNG_SECRET \
   --staging
 ```
@@ -121,7 +121,35 @@ GitHub Actions equivalent:
 1. Add `TINFOIL_API_KEY` as a repository or organization secret.
 2. If `SEARXNG_SECRET` does not already exist in Tinfoil, also add
    `SEARXNG_SECRET_VALUE` as a secret.
-3. Run the `Tinfoil Deploy - Staging` workflow with tag `v0.0.1`.
+3. Run the `Tinfoil Deploy - Staging` workflow with tag `v0.0.2`.
+
+## Current Deployment
+
+`finite-searxng` is live at:
+
+```text
+https://finite-searxng.finite.containers.tinfoil.dev
+```
+
+Direct public smoke passed:
+
+```bash
+curl -fsS \
+  'https://finite-searxng.finite.containers.tinfoil.dev/search?q=open+source&format=json' |
+  jq '.results | length'
+```
+
+The verified proxy path is not passing yet. Both `tinfoil container connect`
+and the standalone `tinfoil-proxy` fail with:
+
+```text
+failed to verify enclave: verifyHardware: failed to verify hardware measurements: no matching hardware platform found
+```
+
+`v0.0.2` changed `cvm-version` from `0.10.1` to `0.10.0` to test whether the
+networking CVM version was the issue. The app still runs, but attested proxy
+verification still fails. Treat this as a Tinfoil verifier/platform follow-up,
+not as production-ready.
 
 ## Production Gate
 
