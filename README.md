@@ -53,17 +53,17 @@ returns non-empty JSON results.
 
 ## Release
 
-The current deployed release is:
+The latest release is:
 
 ```text
-v0.0.2
-ghcr.io/finitecomputer/finite-searxng-tinfoil@sha256:34aa52a3f452be46692b189d5b7e10e3afac0787318e16171b574e89ca36746b
+v0.0.3
+ghcr.io/finitecomputer/finite-searxng-tinfoil@sha256:53033ff33864679d3ff54fa16c16a5e64b50eb9cdd17d830596c4f00616f4213
 ```
 
 For future releases, run the `Tinfoil Release` workflow with a new version:
 
 ```bash
-gh workflow run tinfoil-release.yml -f version=v0.0.3
+gh workflow run tinfoil-release.yml -f version=v0.0.4
 ```
 
 The workflow:
@@ -99,7 +99,7 @@ CLI equivalent once an org admin key is available:
 ```bash
 tinfoil login --api-key admin_...
 export SEARXNG_SECRET_VALUE="$(openssl rand -hex 32)"
-scripts/deploy-staging.sh v0.0.2
+scripts/deploy-staging.sh v0.0.3
 unset SEARXNG_SECRET_VALUE
 ```
 
@@ -111,7 +111,7 @@ printf '%s' '<random-secret>' |
   tinfoil secret create SEARXNG_SECRET --value-file -
 tinfoil container create finite-searxng \
   --repo finitecomputer/finite-searxng-tinfoil \
-  --tag v0.0.2 \
+  --tag v0.0.3 \
   --secret SEARXNG_SECRET \
   --staging
 ```
@@ -121,7 +121,7 @@ GitHub Actions equivalent:
 1. Add `TINFOIL_API_KEY` as a repository or organization secret.
 2. If `SEARXNG_SECRET` does not already exist in Tinfoil, also add
    `SEARXNG_SECRET_VALUE` as a secret.
-3. Run the `Tinfoil Deploy - Staging` workflow with tag `v0.0.2`.
+3. Run the `Tinfoil Deploy - Staging` workflow with tag `v0.0.3`.
 
 ## Current Deployment
 
@@ -129,6 +129,15 @@ GitHub Actions equivalent:
 
 ```text
 https://finite-searxng.finite.containers.tinfoil.dev
+```
+
+Current state:
+
+```text
+tag: v0.0.2
+status: ready
+mode: non-staging
+resources: 2 CPU / 8192 MiB
 ```
 
 Direct public smoke passed:
@@ -139,6 +148,23 @@ curl -fsS \
   jq '.results | length'
 ```
 
+`finite-searxng-medium` is also deployed as a staging experiment at:
+
+```text
+https://finite-searxng-medium.finite.containers.tinfoil.dev
+```
+
+Its current state:
+
+```text
+tag: v0.0.3
+status: ready
+mode: staging
+resources: 4 CPU / 16384 MiB
+```
+
+Direct public smoke also passed for the medium experiment.
+
 The verified proxy path is not passing yet. Both `tinfoil container connect`
 and the standalone `tinfoil-proxy` fail with:
 
@@ -148,8 +174,30 @@ failed to verify enclave: verifyHardware: failed to verify hardware measurements
 
 `v0.0.2` changed `cvm-version` from `0.10.1` to `0.10.0` to test whether the
 networking CVM version was the issue. The app still runs, but attested proxy
-verification still fails. Treat this as a Tinfoil verifier/platform follow-up,
-not as production-ready.
+verification still fails.
+
+`v0.0.3` increased top-level resources from `2 CPU / 8192 MiB` to
+`4 CPU / 16384 MiB` to test whether a different CPU-only platform profile would
+match Tinfoil's hardware measurements. It did not.
+
+Verifier evidence from `go run ./verifier/examples/verifier`:
+
+```text
+finite-searxng-medium runtime MRTD:
+7357a10d2e2724dffe68813e3cc4cfcde6814d749f2fb62e3953e54f6e0b50a219786afe2cd478f684b52c61837e1114
+
+finite-searxng-medium runtime RTMR0:
+492006d8554a37287c46a04d4ac6c3339a463453d3c355756af39f0150e37424ccc98d0c2821732b40670393a5182e58
+```
+
+That MRTD/RTMR0 pair is not present in `tinfoilsh/hardware-measurements`
+release `v0.0.35`, so hardware verification fails before code measurement
+comparison. The existing `kimi-k2-6` container on the same TDX/H200 host
+verifies and matches `extra_large_1d_new`.
+
+Treat this as a Tinfoil verifier/platform follow-up, not as production-ready.
+Also note that the current verifier resolves the repo's latest release; keep the
+GitHub "latest" release aligned with whichever deployed tag is being tested.
 
 ## Production Gate
 
