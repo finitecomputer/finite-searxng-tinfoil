@@ -15,7 +15,7 @@ networks:
 
 containers:
   - name: "searxng"
-    image: "ghcr.io/finitecomputer/finite-searxng-tinfoil:placeholder"
+    image: "ghcr.io/finitecomputer/finite-searxng-tinfoil@sha256:53033ff33864679d3ff54fa16c16a5e64b50eb9cdd17d830596c4f00616f4213" # v0.0.3
     env:
       - SEARXNG_BASE_URL: ""
       - SEARXNG_LIMITER: "false"
