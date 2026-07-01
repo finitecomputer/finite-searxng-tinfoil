@@ -97,6 +97,15 @@ curl -fsS 'http://127.0.0.1:3301/search?q=open+source&format=json' |
 CLI equivalent once an org admin key is available:
 
 ```bash
+tinfoil login --api-key admin_...
+export SEARXNG_SECRET_VALUE="$(openssl rand -hex 32)"
+scripts/deploy-staging.sh v0.0.1
+unset SEARXNG_SECRET_VALUE
+```
+
+Manual form:
+
+```bash
 tinfoil login
 printf '%s' '<random-secret>' |
   tinfoil secret create SEARXNG_SECRET --value-file -
