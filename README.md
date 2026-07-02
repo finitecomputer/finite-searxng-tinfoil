@@ -188,19 +188,28 @@ The verified proxy smoke returned 155 results and anonymous proxy access
 returned 401.
 
 A Hermes consumer smoke on 2026-07-02 also passed against this canonical
-container after the local Hermes SearXNG provider was given bearer-token
-support:
+container with stock Hermes by placing a localhost token proxy in front of
+standalone `tinfoil-proxy`:
 
 ```text
 direct anonymous /search -> 401
-direct bearer-token /search -> 87 raw results
-Hermes SearXNG provider with token -> success true, 3 normalized results
-Hermes web_search_tool with searxng backend -> success true, 3 results
+standalone tinfoil-proxy anonymous /search -> 401
+local token proxy /search -> 96 raw results
+Hermes token env present -> false
+stock Hermes SearXNG provider -> success true, 3 normalized results
+stock Hermes web_search_tool -> success true, 3 results
 ```
 
-Use `SEARXNG_URL=https://finite-searxng.finite.containers.tinfoil.dev` and
-`SEARXNG_TOKEN=<FINITE_SEARCH_TOKEN>` in a Hermes runtime that sends
-`Authorization: Bearer <token>`.
+The intended runtime shape is:
+
+```text
+Hermes SEARXNG_URL=http://127.0.0.1:<token-proxy-port>
+  -> token proxy with FINITE_SEARCH_TOKEN in its environment
+  -> tinfoil-proxy
+  -> finite-searxng
+```
+
+Do not put the raw token in the Hermes profile.
 
 `finite-searxng-medium` is also deployed as an experiment container at:
 
