@@ -55,22 +55,23 @@ authorized /search?q=open+source&format=json -> non-empty JSON results
 
 ## Release
 
-The latest verified raw release is:
+The latest published release is:
+
+```text
+v0.0.5
+ghcr.io/finitecomputer/finite-searxng-tinfoil@sha256:3171c5914536eec1629bfb8e4f23a80451a8e2fc7b4c67f1215f4c5e0ab7df3e
+```
+
+`v0.0.5` keeps the verified `small_0d_new` hardware shape and adds the
+bearer-token proxy plus the `FINITE_SEARCH_TOKEN` secret. It is published,
+marked as the GitHub latest release, and deployed on canonical `finite-searxng`.
+
+The previous raw-but-verified fallback release is:
 
 ```text
 v0.0.4
 ghcr.io/finitecomputer/finite-searxng-tinfoil@sha256:a0d2f4a6c1701e50922e666476fd7cf5707a98d5184927c36e1c7f8b7f81e9a6
 ```
-
-`v0.0.4` updates the top-level Tinfoil enclave shape to
-`cvm-version: 0.10.4`, `cpus: 8`, and `memory: 16384` to match the current
-public Tinfoil web-search/doc-upload examples and the published `small_0d_new`
-hardware profile shape. It is published and marked as the GitHub latest release,
-and the `finite-searxng-medium` experiment container verifies through
-`tinfoil-proxy`.
-
-The next release candidate is `v0.0.5`, which adds the bearer-token proxy and
-the `FINITE_SEARCH_TOKEN` secret.
 
 For future releases, run the `Tinfoil Release` workflow with a new version:
 
@@ -156,19 +157,35 @@ https://finite-searxng.finite.containers.tinfoil.dev
 Current state:
 
 ```text
-tag: v0.0.4
+tag: v0.0.5
 status: ready
 mode: non-staging
 resources: 8 CPU / 16384 MiB
+secrets: SEARXNG_SECRET, FINITE_SEARCH_TOKEN
 ```
 
-Direct public smoke passed:
+Direct public gate smoke passed:
+
+```text
+anonymous /search -> 401
+authorized /search -> 155 results
+```
+
+Verified proxy smoke passed:
 
 ```bash
-curl -fsS \
-  'https://finite-searxng.finite.containers.tinfoil.dev/search?q=open+source&format=json' |
-  jq '.results | length'
+tinfoil-proxy \
+  -e finite-searxng.finite.containers.tinfoil.dev \
+  -r finitecomputer/finite-searxng-tinfoil \
+  -p 3396
+
+SEARXNG_URL=http://127.0.0.1:3396 \
+  SEARXNG_TOKEN='<FINITE_SEARCH_TOKEN>' \
+  scripts/smoke-searxng.sh
 ```
+
+The verified proxy smoke returned 155 results and anonymous proxy access
+returned 401.
 
 `finite-searxng-medium` is also deployed as an experiment container at:
 
@@ -251,5 +268,5 @@ GitHub "latest" release aligned with whichever deployed tag is being tested.
 ## Production Gate
 
 The selected access-control story is a measured bearer-token proxy in front of
-`/search`. Before broader production use, rotate the development token into a
-team-owned secret and decide where the calling runtime should store it.
+`/search`. Before broader production use, rotate the generated development token
+into a team-owned secret and decide where the calling runtime should store it.
