@@ -64,7 +64,8 @@ ghcr.io/finitecomputer/finite-searxng-tinfoil@sha256:a0d2f4a6c1701e50922e666476f
 `cvm-version: 0.10.4`, `cpus: 8`, and `memory: 16384` to match the current
 public Tinfoil web-search/doc-upload examples and the published `small_0d_new`
 hardware profile shape. It is published and marked as the GitHub latest release,
-but it still needs to be deployed and verified through `tinfoil-proxy`.
+and the `finite-searxng-medium` experiment container verifies through
+`tinfoil-proxy`.
 
 For future releases, run the `Tinfoil Release` workflow with a new version:
 
@@ -154,7 +155,7 @@ curl -fsS \
   jq '.results | length'
 ```
 
-`finite-searxng-medium` is also deployed as a staging experiment at:
+`finite-searxng-medium` is also deployed as an experiment container at:
 
 ```text
 https://finite-searxng-medium.finite.containers.tinfoil.dev
@@ -163,16 +164,35 @@ https://finite-searxng-medium.finite.containers.tinfoil.dev
 Its current state:
 
 ```text
-tag: v0.0.3
+tag: v0.0.4
 status: ready
-mode: staging
-resources: 4 CPU / 16384 MiB
+mode: non-staging
+resources: 8 CPU / 16384 MiB
 ```
 
-Direct public smoke also passed for the medium experiment.
+Direct public smoke passed for the medium experiment:
 
-The verified proxy path is not passing yet. Both `tinfoil container connect`
-and the standalone `tinfoil-proxy` fail with:
+```bash
+curl -fsS \
+  'https://finite-searxng-medium.finite.containers.tinfoil.dev/search?q=open+source&format=json' |
+  jq '{result_count: (.results | length), unresponsive: (.unresponsive_engines // [] | length)}'
+```
+
+Verified proxy smoke also passed:
+
+```bash
+tinfoil-proxy \
+  -e finite-searxng-medium.finite.containers.tinfoil.dev \
+  -r finitecomputer/finite-searxng-tinfoil \
+  -p 3394
+
+SEARXNG_URL=http://127.0.0.1:3394 scripts/smoke-searxng.sh
+```
+
+The verified smoke returned 155 results. This confirms the old hardware
+measurement caveat is fixed for the `v0.0.4` experiment shape.
+
+Earlier `v0.0.2` and `v0.0.3` attempts failed the verified proxy path with:
 
 ```text
 failed to verify enclave: verifyHardware: failed to verify hardware measurements: no matching hardware platform found
@@ -191,25 +211,25 @@ published hardware profile shapes in `tinfoilsh/hardware-measurements@v0.0.35`.
 The public profiles include `mini_0d` at `4 CPU / 4096 MiB` and `small_0d_new`
 at `8 CPU / 16384 MiB`; Tinfoil's own `confidential-websearch` and
 `confidential-doc-upload` repos also use `cvm-version: 0.10.4` with
-`8 CPU / 16384 MiB` and open egress. `v0.0.4` is published to test that shape.
+`8 CPU / 16384 MiB` and open egress. `v0.0.4` uses that shape and verifies.
 
-Verifier evidence from `go run ./verifier/examples/verifier`:
+Current verifier evidence from `go run ./verifier/examples/verifier`:
 
 ```text
 finite-searxng-medium runtime MRTD:
 7357a10d2e2724dffe68813e3cc4cfcde6814d749f2fb62e3953e54f6e0b50a219786afe2cd478f684b52c61837e1114
 
 finite-searxng-medium runtime RTMR0:
-492006d8554a37287c46a04d4ac6c3339a463453d3c355756af39f0150e37424ccc98d0c2821732b40670393a5182e58
+a2749c840579faca6adf0c9c3ab69f277556cda67f8a6b3553c2c7fbf00e9706ec77a6f6960d802433b339ff8b72eefb
+
+matched hardware:
+small_0d_new@92c6b94f64e6867989d758b1c3682d1bbd775b3fc4cee5936c50c98dfc8f5e3e
+
+result:
+TLS public key fingerprint matches
+Measurements match
 ```
 
-That MRTD/RTMR0 pair is not present in `tinfoilsh/hardware-measurements`
-release `v0.0.35`, so hardware verification fails before code measurement
-comparison. The existing `kimi-k2-6` container on the same TDX/H200 host
-verifies and matches `extra_large_1d_new`.
-
-Treat this as a Tinfoil verifier/platform follow-up until `v0.0.4` is deployed
-and verified through `tinfoil-proxy`, not as production-ready.
 Also note that the current verifier resolves the repo's latest release; keep the
 GitHub "latest" release aligned with whichever deployed tag is being tested.
 
