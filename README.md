@@ -9,16 +9,19 @@ measurement can be verified by clients.
 
 ## What This Runs
 
-- One SearXNG container.
+- One measured container running SearXNG plus a local bearer-token proxy.
 - JSON search enabled.
 - The same narrowed engine set proven on `lat2`.
 - Open outbound egress so SearXNG can reach public search engines.
-- Tinfoil shim routes only `/search` and `/search/*`.
-- Healthcheck uses local `/healthz`, not a real search query.
+- Tinfoil shim routes only `/search` and `/search/*` to the auth proxy.
+- Healthcheck uses the proxy's local `/healthz`, not a real search query.
 - `SEARXNG_SECRET` is a Tinfoil secret, not a public env var.
+- `FINITE_SEARCH_TOKEN` is a Tinfoil secret required as
+  `Authorization: Bearer <token>` on `/search`.
 
-This is a staging prototype. SearXNG does not provide request authentication by
-itself, so do not treat a raw public SearXNG endpoint as production-ready.
+This is still a prototype, but raw public SearXNG exposure is no longer the
+intended access pattern. The canonical endpoint should be called through a
+verified Tinfoil client and the bearer-token gate.
 
 ## Public Repo Setup
 
@@ -46,14 +49,13 @@ scripts/smoke-tinfoil-searxng-bundle.sh
 That builds the local image and proves:
 
 ```text
-http://127.0.0.1:<port>/search?q=open+source&format=json
+anonymous /search -> 401
+authorized /search?q=open+source&format=json -> non-empty JSON results
 ```
-
-returns non-empty JSON results.
 
 ## Release
 
-The latest published release is:
+The latest verified raw release is:
 
 ```text
 v0.0.4
@@ -67,10 +69,13 @@ hardware profile shape. It is published and marked as the GitHub latest release,
 and the `finite-searxng-medium` experiment container verifies through
 `tinfoil-proxy`.
 
+The next release candidate is `v0.0.5`, which adds the bearer-token proxy and
+the `FINITE_SEARCH_TOKEN` secret.
+
 For future releases, run the `Tinfoil Release` workflow with a new version:
 
 ```bash
-gh workflow run tinfoil-release.yml -f version=v0.0.4
+gh workflow run tinfoil-release.yml -f version=v0.0.5
 ```
 
 The workflow:
@@ -85,9 +90,10 @@ The workflow:
 In the Tinfoil dashboard:
 
 1. Add a `SEARXNG_SECRET` secret with a random value.
-2. Create a new container from the public repo and release tag.
-3. Deploy in staging first.
-4. Smoke through the verified Tinfoil proxy, not plain public `curl`:
+2. Add a `FINITE_SEARCH_TOKEN` secret with the bearer token clients must send.
+3. Create a new container from the public repo and release tag.
+4. Deploy in staging first.
+5. Smoke through the verified Tinfoil proxy, not plain public `curl`:
 
 ```bash
 tinfoil container connect finite-searxng \
@@ -97,7 +103,9 @@ tinfoil container connect finite-searxng \
 Then, in another shell:
 
 ```bash
-curl -fsS 'http://127.0.0.1:3301/search?q=open+source&format=json' |
+curl -fsS \
+  -H 'Authorization: Bearer <FINITE_SEARCH_TOKEN>' \
+  'http://127.0.0.1:3301/search?q=open+source&format=json' |
   jq '.results | length'
 ```
 
@@ -106,8 +114,10 @@ CLI equivalent once an org admin key is available:
 ```bash
 tinfoil login --api-key admin_...
 export SEARXNG_SECRET_VALUE="$(openssl rand -hex 32)"
-scripts/deploy-staging.sh v0.0.4
+export FINITE_SEARCH_TOKEN_VALUE="$(openssl rand -hex 32)"
+scripts/deploy-staging.sh v0.0.5
 unset SEARXNG_SECRET_VALUE
+unset FINITE_SEARCH_TOKEN_VALUE
 ```
 
 Manual form:
@@ -116,10 +126,13 @@ Manual form:
 tinfoil login
 printf '%s' '<random-secret>' |
   tinfoil secret create SEARXNG_SECRET --value-file -
+printf '%s' '<random-token>' |
+  tinfoil secret create FINITE_SEARCH_TOKEN --value-file -
 tinfoil container create finite-searxng \
   --repo finitecomputer/finite-searxng-tinfoil \
-  --tag v0.0.4 \
+  --tag v0.0.5 \
   --secret SEARXNG_SECRET \
+  --secret FINITE_SEARCH_TOKEN \
   --staging
 ```
 
@@ -128,7 +141,9 @@ GitHub Actions equivalent:
 1. Add `TINFOIL_API_KEY` as a repository or organization secret.
 2. If `SEARXNG_SECRET` does not already exist in Tinfoil, also add
    `SEARXNG_SECRET_VALUE` as a secret.
-3. Run the `Tinfoil Deploy - Staging` workflow with tag `v0.0.4`.
+3. If `FINITE_SEARCH_TOKEN` does not already exist in Tinfoil, also add
+   `FINITE_SEARCH_TOKEN_VALUE` as a secret.
+4. Run the `Tinfoil Deploy - Staging` workflow with tag `v0.0.5`.
 
 ## Current Deployment
 
@@ -141,10 +156,10 @@ https://finite-searxng.finite.containers.tinfoil.dev
 Current state:
 
 ```text
-tag: v0.0.2
+tag: v0.0.4
 status: ready
 mode: non-staging
-resources: 2 CPU / 8192 MiB
+resources: 8 CPU / 16384 MiB
 ```
 
 Direct public smoke passed:
@@ -235,9 +250,6 @@ GitHub "latest" release aligned with whichever deployed tag is being tested.
 
 ## Production Gate
 
-Before production use, choose one:
-
-- Keep the endpoint private to trusted runtimes through an access-controlled
-  gateway.
-- Add a token-gated wrapper in front of `/search`.
-- Accept raw public SearXNG exposure only for short-lived experiments.
+The selected access-control story is a measured bearer-token proxy in front of
+`/search`. Before broader production use, rotate the development token into a
+team-owned secret and decide where the calling runtime should store it.

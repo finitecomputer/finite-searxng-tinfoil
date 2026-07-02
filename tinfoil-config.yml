@@ -19,8 +19,12 @@ containers:
     env:
       - SEARXNG_BASE_URL: ""
       - SEARXNG_LIMITER: "false"
+      - SEARXNG_PORT: "8080"
+      - FINITE_SEARCH_PROXY_PORT: "8081"
+      - FINITE_SEARCH_UPSTREAM: "http://127.0.0.1:8080"
     secrets:
       - SEARXNG_SECRET
+      - FINITE_SEARCH_TOKEN
     networks: [public]
     restart: unless-stopped
     read_only: false
@@ -32,7 +36,7 @@ containers:
       test:
         [
           "CMD-SHELL",
-          "wget -qO- 'http://127.0.0.1:8080/healthz' >/dev/null",
+          "wget -qO- 'http://127.0.0.1:8081/healthz' >/dev/null",
         ]
       interval: 30s
       timeout: 10s
@@ -41,7 +45,7 @@ containers:
 
 shim:
   upstream-container: "searxng"
-  upstream-port: 8080
+  upstream-port: 8081
   paths:
     - /search
     - /search/*
