@@ -12,7 +12,7 @@ Environment:
   TINFOIL_BIN              Optional. Defaults to tinfoil or ~/.local/bin/tinfoil.
   TINFOIL_CONTAINER_NAME   Optional. Default: finite-searxng.
   TINFOIL_CONFIG_REPO      Optional. Default: finitecomputer/finite-searxng-tinfoil.
-  TINFOIL_CONFIG_TAG       Optional. Default: first positional arg or v0.0.3.
+  TINFOIL_CONFIG_TAG       Optional. Default: first positional arg or v0.0.4.
   TINFOIL_STAGING          Optional. true/false. Default: true.
   SEARXNG_SECRET_NAME      Optional. Default: SEARXNG_SECRET.
   SEARXNG_SECRET_VALUE     Optional. If set, creates or updates the Tinfoil secret.
@@ -46,7 +46,7 @@ find_tinfoil() {
 
 tinfoil_bin="$(find_tinfoil)"
 repo="${TINFOIL_CONFIG_REPO:-finitecomputer/finite-searxng-tinfoil}"
-tag="${TINFOIL_CONFIG_TAG:-${1:-v0.0.3}}"
+tag="${TINFOIL_CONFIG_TAG:-${1:-v0.0.4}}"
 container="${TINFOIL_CONTAINER_NAME:-finite-searxng}"
 secret_name="${SEARXNG_SECRET_NAME:-SEARXNG_SECRET}"
 staging="${TINFOIL_STAGING:-true}"

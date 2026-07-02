@@ -53,12 +53,17 @@ returns non-empty JSON results.
 
 ## Release
 
-The latest release is:
+The latest published release is:
 
 ```text
 v0.0.3
 ghcr.io/finitecomputer/finite-searxng-tinfoil@sha256:53033ff33864679d3ff54fa16c16a5e64b50eb9cdd17d830596c4f00616f4213
 ```
+
+The next candidate release is `v0.0.4`. It updates the top-level Tinfoil
+enclave shape to `cvm-version: 0.10.4`, `cpus: 8`, and `memory: 16384` to match
+the current public Tinfoil web-search/doc-upload examples and the published
+`small_0d_new` hardware profile shape.
 
 For future releases, run the `Tinfoil Release` workflow with a new version:
 
@@ -99,7 +104,7 @@ CLI equivalent once an org admin key is available:
 ```bash
 tinfoil login --api-key admin_...
 export SEARXNG_SECRET_VALUE="$(openssl rand -hex 32)"
-scripts/deploy-staging.sh v0.0.3
+scripts/deploy-staging.sh v0.0.4
 unset SEARXNG_SECRET_VALUE
 ```
 
@@ -111,7 +116,7 @@ printf '%s' '<random-secret>' |
   tinfoil secret create SEARXNG_SECRET --value-file -
 tinfoil container create finite-searxng \
   --repo finitecomputer/finite-searxng-tinfoil \
-  --tag v0.0.3 \
+  --tag v0.0.4 \
   --secret SEARXNG_SECRET \
   --staging
 ```
@@ -121,7 +126,7 @@ GitHub Actions equivalent:
 1. Add `TINFOIL_API_KEY` as a repository or organization secret.
 2. If `SEARXNG_SECRET` does not already exist in Tinfoil, also add
    `SEARXNG_SECRET_VALUE` as a secret.
-3. Run the `Tinfoil Deploy - Staging` workflow with tag `v0.0.3`.
+3. Run the `Tinfoil Deploy - Staging` workflow with tag `v0.0.4`.
 
 ## Current Deployment
 
@@ -180,6 +185,13 @@ verification still fails.
 `4 CPU / 16384 MiB` to test whether a different CPU-only platform profile would
 match Tinfoil's hardware measurements. It did not.
 
+Deeper follow-up found that `4 CPU / 16384 MiB` is not one of the exact
+published hardware profile shapes in `tinfoilsh/hardware-measurements@v0.0.35`.
+The public profiles include `mini_0d` at `4 CPU / 4096 MiB` and `small_0d_new`
+at `8 CPU / 16384 MiB`; Tinfoil's own `confidential-websearch` and
+`confidential-doc-upload` repos also use `cvm-version: 0.10.4` with
+`8 CPU / 16384 MiB` and open egress. `v0.0.4` is prepared to test that shape.
+
 Verifier evidence from `go run ./verifier/examples/verifier`:
 
 ```text
@@ -195,7 +207,8 @@ release `v0.0.35`, so hardware verification fails before code measurement
 comparison. The existing `kimi-k2-6` container on the same TDX/H200 host
 verifies and matches `extra_large_1d_new`.
 
-Treat this as a Tinfoil verifier/platform follow-up, not as production-ready.
+Treat this as a Tinfoil verifier/platform follow-up until `v0.0.4` is deployed
+and verified through `tinfoil-proxy`, not as production-ready.
 Also note that the current verifier resolves the repo's latest release; keep the
 GitHub "latest" release aligned with whichever deployed tag is being tested.
 
