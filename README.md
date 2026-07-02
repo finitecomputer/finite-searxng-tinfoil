@@ -187,6 +187,21 @@ SEARXNG_URL=http://127.0.0.1:3396 \
 The verified proxy smoke returned 155 results and anonymous proxy access
 returned 401.
 
+A Hermes consumer smoke on 2026-07-02 also passed against this canonical
+container after the local Hermes SearXNG provider was given bearer-token
+support:
+
+```text
+direct anonymous /search -> 401
+direct bearer-token /search -> 87 raw results
+Hermes SearXNG provider with token -> success true, 3 normalized results
+Hermes web_search_tool with searxng backend -> success true, 3 results
+```
+
+Use `SEARXNG_URL=https://finite-searxng.finite.containers.tinfoil.dev` and
+`SEARXNG_TOKEN=<FINITE_SEARCH_TOKEN>` in a Hermes runtime that sends
+`Authorization: Bearer <token>`.
+
 `finite-searxng-medium` is also deployed as an experiment container at:
 
 ```text
