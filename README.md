@@ -56,14 +56,15 @@ returns non-empty JSON results.
 The latest published release is:
 
 ```text
-v0.0.3
-ghcr.io/finitecomputer/finite-searxng-tinfoil@sha256:53033ff33864679d3ff54fa16c16a5e64b50eb9cdd17d830596c4f00616f4213
+v0.0.4
+ghcr.io/finitecomputer/finite-searxng-tinfoil@sha256:a0d2f4a6c1701e50922e666476fd7cf5707a98d5184927c36e1c7f8b7f81e9a6
 ```
 
-The next candidate release is `v0.0.4`. It updates the top-level Tinfoil
-enclave shape to `cvm-version: 0.10.4`, `cpus: 8`, and `memory: 16384` to match
-the current public Tinfoil web-search/doc-upload examples and the published
-`small_0d_new` hardware profile shape.
+`v0.0.4` updates the top-level Tinfoil enclave shape to
+`cvm-version: 0.10.4`, `cpus: 8`, and `memory: 16384` to match the current
+public Tinfoil web-search/doc-upload examples and the published `small_0d_new`
+hardware profile shape. It is published and marked as the GitHub latest release,
+but it still needs to be deployed and verified through `tinfoil-proxy`.
 
 For future releases, run the `Tinfoil Release` workflow with a new version:
 
@@ -190,7 +191,7 @@ published hardware profile shapes in `tinfoilsh/hardware-measurements@v0.0.35`.
 The public profiles include `mini_0d` at `4 CPU / 4096 MiB` and `small_0d_new`
 at `8 CPU / 16384 MiB`; Tinfoil's own `confidential-websearch` and
 `confidential-doc-upload` repos also use `cvm-version: 0.10.4` with
-`8 CPU / 16384 MiB` and open egress. `v0.0.4` is prepared to test that shape.
+`8 CPU / 16384 MiB` and open egress. `v0.0.4` is published to test that shape.
 
 Verifier evidence from `go run ./verifier/examples/verifier`:
 
